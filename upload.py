@@ -19,7 +19,7 @@ Dependencies:
 import pytumblr
 import subprocess
 # from os.path import getsize, splitext, realpath
-from os import rename, remove, path, makedirs
+from os import rename, remove, path, makedirs, walk
 from time import sleep
 from datetime import timedelta
 import math
@@ -66,19 +66,23 @@ def move_video_to_sent_folder(file_path):
 
 
 def too_big(file_path, file_name, file_ext, metadata, exceed_factor):
-    new_file_name = file_name + '_smaller.' + file_ext
+    new_file_path = file_name + '_smaller.' + file_ext
     convert_params = ['avconv',
                       '-i', file_path,
                       '-s', '{width}x{height}'.format(width=metadata.get('width') / exceed_factor,
                                                       height=metadata.get('height') / exceed_factor),
-                      new_file_name]
+                      new_file_path]
+
+    logging.debug('File will be converted with:\n{0}'.format(convert_params))
 
     out, err = subprocess.Popen(convert_params)
     if err != 0:
         logging.debug('Error {0}, avconv output:\n{1}'.format(err, out))
         exit(1)
 
-    return new_file_name
+    # Moving too big video to sent folder
+    move_video_to_sent_folder(file_path)
+    return new_file_path
 
 
 def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_token, oauth_secret):
@@ -97,6 +101,8 @@ def main():
     argument_parser = ArgumentParser()
     argument_parser.add_argument('-d', '--debug', action='store_true',
                                  help='Turn on debug mode - will log all events to console')
+    argument_parser.add_argument('-p', '--path', required=True, action='store',
+                                 help='Path to directory where the files to upload are')
     argument_parser.add_argument('--username', required=True, action='store',
                                  help='User name/nick of the account')
     argument_parser.add_argument('--consumer-key', required=True, action='store',
@@ -111,67 +117,74 @@ def main():
     args = argument_parser.parse_args()
 
     if args.debug:
-        # print('Debug mode is turned on')
         logging.basicConfig(level=logging.DEBUG)
         logging.debug("Debug mode turned on")
 
     daily_upload_time = timedelta(milliseconds=0)
 
-    # LOOP START
-    # list all files in folder
+    # INFINITY LOOP START
+    while True:
+        # list all files in folder
+        for dirpath, dirnames, filenames in walk(args.path):
+            file_path = path.join(dirpath, filenames)
+            file_name, file_ext = path.splitext(file_path)
+            if file_ext != 'mp4':
+                continue
+            logging.debug('File path: {0}'.format(file_path))
 
-    file_path = '/home/power_button/projects/tumblr_client/to_send/20170117_155049.mp4'
-    logging.debug('File path: {0}'.format(file_path))
-    file_name, file_ext = path.splitext(file_path)
 
-    # File can't be bigger than 100MB
-    # if so, video will be compressed (later)
-    # but now check how many times bigger it is
-    file_size = path.getsize(file_path)
-    logging.debug('File size: {0}'.format(file_size))
+            # File can't be bigger than 100MB
+            # if so, video will be compressed (later)
+            # but now check how many times bigger it is
+            file_size = path.getsize(file_path)
+            logging.debug('File size: {0}'.format(file_size))
 
-    exceed_factor = file_size/104857600
+            exceed_factor = file_size/104857600
 
-    parser = createParser(file_path)
-    if not parser:
-        print('Unable to create parser, check if file exist')
-        exit(1)
+            parser = createParser(file_path)
+            if not parser:
+                print('Unable to create parser, check if file exist')
+                exit(1)
 
-    metadata = extractMetadata(parser)
-    if not metadata:
-        print('Unable to extract metadata')
-        exit(1)
+            metadata = extractMetadata(parser)
+            if not metadata:
+                print('Unable to extract metadata')
+                exit(1)
 
-    if exceed_factor >= 1:
-        exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the resolution denominator
-        logging.debug('File is too big')
-        file_path = too_big(file_path, file_name, file_ext, metadata, exceed_factor)
+            if exceed_factor >= 1:
+                exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
+                                                         # resolution denominator
+                logging.debug('File is too big')
+                file_path = too_big(file_path, file_name, file_ext, metadata, exceed_factor)
 
-    file_length = metadata.get('duration')
-    logging.debug('File length: {0}'.format(file_length))
-    logging.debug('Already uploaded time: {0}'.format(daily_upload_time))
+            file_length = metadata.get('duration')
+            logging.debug('File length: {0}'.format(file_length))
+            logging.debug('Already uploaded time: {0}'.format(daily_upload_time))
 
-    daily_upload_time += file_length
-    logging.debug('Total time after upload: {0}'.format(daily_upload_time))
+            daily_upload_time += file_length
+            logging.debug('Total time after upload: {0}'.format(daily_upload_time))
 
-    if daily_upload_time >= timedelta(minutes=5):
-        logging.debug('Cannot upload more today, will wait 24 hours')
-        sleep(86400)    # sleep for 24 hours
-        daily_upload_time = timedelta(milliseconds=0)
+            if daily_upload_time >= timedelta(minutes=5):
+                logging.debug('Cannot upload more today, will wait 24 hours')
+                sleep(86400)    # sleep for 24 hours
+                daily_upload_time = timedelta(milliseconds=0)
 
-    # read caption from file
-    caption_text, caption_file_path = read_caption(file_name)
+            # read caption from file
+            caption_text, caption_file_path = read_caption(file_name)
 
-    # upload(file_path, args.username, caption_text, args.consumer_key, args.consumer_secret, args.oauth_token,
-    #        args.oauth_secret)
+            # upload(file_path, args.username, caption_text, args.consumer_key, args.consumer_secret, args.oauth_token,
+            #        args.oauth_secret)
 
-    # after upload remove file with caption
-    try:
-        remove(caption_file_path)
-    except Exception:
-        logging.debug('File not removed\n{0}'.format(Exception))
+            # after upload remove file with caption
+            try:
+                remove(caption_file_path)
+            except Exception:
+                logging.debug('File not removed\n{0}'.format(Exception))
 
-    move_video_to_sent_folder(file_path)
+            move_video_to_sent_folder(file_path)
+
+        # Wait one hour before rerun the directory scanning
+        sleep(3600)
 
 
 if __name__ == '__main__':
