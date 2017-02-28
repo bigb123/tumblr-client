@@ -172,8 +172,8 @@ def main():
             # read caption from file
             caption_text, caption_file_path = read_caption(file_name)
 
-            # upload(file_path, args.username, caption_text, args.consumer_key, args.consumer_secret, args.oauth_token,
-            #        args.oauth_secret)
+            upload(file_path, args.username, caption_text, args.consumer_key, args.consumer_secret, args.oauth_token,
+                   args.oauth_secret)
 
             # after upload remove file with caption
             try:
