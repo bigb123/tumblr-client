@@ -14,11 +14,11 @@ Caption will be read from <video_name>.txt
 Dependencies:
 - avconv (libav debian package)
 - hachoir3 (pip3 install hachoir3)
+- py3tumblr (pip3 install Py3Tumblr)
 '''
 
 import pytumblr
 import subprocess
-# from os.path import getsize, splitext, realpath
 from os import rename, remove, path, makedirs, walk
 from time import sleep
 from datetime import timedelta
