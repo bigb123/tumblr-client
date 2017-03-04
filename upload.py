@@ -38,10 +38,9 @@ def read_caption(file_name_path):
                 caption_text = caption_file.read()
                 logging.debug('Caption file contains:\n{0}'.format(caption_text))
                 return caption_text, caption_file_path
-        except Exception:
+        except OSError:
             logging.debug('Cannot open file with caption: {0}. Will try again for one minute.\n{1}'.format(
-                caption_file_path, Exception
-                )
+                caption_file_path, OSError)
             )
             sleep(60)
 
@@ -52,8 +51,8 @@ def move_video_to_sent_folder(file_path):
     if not path.exists(sent_dir):
         try:
             makedirs(sent_dir)
-        except Exception:
-            logging.debug('Exception occured during directory creation:\n{0}'.format(Exception))
+        except OSError:
+            logging.debug('Exception occured during directory creation:\n{0}'.format(OSError))
             exit(1)
 
     logging.debug('File will be moved to {0}'.format(sent_dir))
@@ -132,7 +131,7 @@ def main():
     while True:
         # list all files in folder
         dirpath = args.path
-        filenames = [f for f in listdir(dirpath) if path.isfile(path.join(dirpath, f))]
+        filenames = [f for f in listdir(dirpath) if path.isfile(path.join(dirpath, f))].sort()
         for filename in filenames:
             file_path = path.join(dirpath, filename)
             file_name_path, file_ext = path.splitext(file_path)
@@ -186,8 +185,8 @@ def main():
             # after upload remove file with caption
             try:
                 remove(caption_file_path)
-            except Exception:
-                logging.debug('File not removed\n{0}'.format(Exception))
+            except OSError:
+                logging.debug('File not removed\n{0}'.format(OSError))
 
             move_video_to_sent_folder(file_path)
             logging.debug('Already uploaded time: {0}, time left: {1}'.format(daily_upload_time,
