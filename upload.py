@@ -190,7 +190,7 @@ def main():
                 logging.debug('File not removed\n{0}'.format(Exception))
 
             move_video_to_sent_folder(file_path)
-            logging('Already uploaded time: {0}, time left: {1}'.format(daily_upload_time,
+            logging.debug('Already uploaded time: {0}, time left: {1}'.format(daily_upload_time,
                                                                         DEADLINE - daily_upload_time))
 
         # Wait 10 mins before rerun the directory scanning
