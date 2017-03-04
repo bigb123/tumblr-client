@@ -98,7 +98,7 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
     )
 
     upload_output = client.create_video(username, caption=caption, data=file_path)
-    logging.debug("Tumbler upload message:\n{0}".format(upload_output))
+    logging.debug("Tumblr upload message:\n{0}".format(upload_output))
 
 
 def main():
@@ -188,6 +188,8 @@ def main():
                 logging.debug('File not removed\n{0}'.format(Exception))
 
             move_video_to_sent_folder(file_path)
+            logging('Already uploaded time: {0}, time left: {1}'.format(daily_upload_time,
+                                                                        timedelta(minutes=5) - daily_upload_time))
 
         # Wait 10 mins before rerun the directory scanning
         logging.debug('Waiting for new files')
