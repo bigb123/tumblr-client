@@ -190,6 +190,7 @@ def main():
             move_video_to_sent_folder(file_path)
 
         # Wait 10 mins before rerun the directory scanning
+        logging.debug('Waiting for new files')
         sleep(600)
 
 
