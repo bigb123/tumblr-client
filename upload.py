@@ -66,19 +66,23 @@ def move_video_to_sent_folder(file_path):
 
 
 def too_big(file_path, file_name, file_ext, metadata, exceed_factor):
-    new_file_path = file_name + '_smaller.' + file_ext
+    new_file_path = file_name + '_smaller' + file_ext
     convert_params = ['avconv',
+                      '-loglevel', 'quiet',
                       '-i', file_path,
-                      '-s', '{width}x{height}'.format(width=metadata.get('width') / exceed_factor,
-                                                      height=metadata.get('height') / exceed_factor),
+                      '-s', '{width}x{height}'.format(width=int(metadata.get('width')/exceed_factor),
+                                                      height=int(metadata.get('height')/exceed_factor)),
                       new_file_path]
 
     logging.debug('File will be converted with:\n{0}'.format(convert_params))
 
-    out, err = subprocess.Popen(convert_params)
-    if err != 0:
-        logging.debug('Error {0}, avconv output:\n{1}'.format(err, out))
-        exit(1)
+    try:
+        out = subprocess.run(convert_params, check=True)
+    except subprocess.CalledProcessError as Error:
+        logging.debug('Error during file conversion: {0}'.format(Error))
+    # if err != 0:
+    #     logging.debug('Error {0}, avconv output:\n{1}'.format(err, out))
+    #     exit(1)
 
     # Moving too big video to sent folder
     move_video_to_sent_folder(file_path)
@@ -126,65 +130,66 @@ def main():
     while True:
         # list all files in folder
         for dirpath, dirnames, filenames in walk(args.path):
-            file_path = path.join(dirpath, filenames)
-            file_name, file_ext = path.splitext(file_path)
-            if file_ext != 'mp4':
-                continue
-            logging.debug('File path: {0}'.format(file_path))
+            for filename in filenames:
+                file_path = path.join(dirpath, filename)
+                file_name, file_ext = path.splitext(file_path)
+                if file_ext != '.mp4':
+                    continue
+                logging.debug('File path: {0}'.format(file_path))
 
 
-            # File can't be bigger than 100MB
-            # if so, video will be compressed (later)
-            # but now check how many times bigger it is
-            file_size = path.getsize(file_path)
-            logging.debug('File size: {0}'.format(file_size))
+                # File can't be bigger than 100MB
+                # if so, video will be compressed (later)
+                # but now check how many times bigger it is
+                file_size = path.getsize(file_path)
+                logging.debug('File size: {0}'.format(file_size))
 
-            exceed_factor = file_size/104857600
+                exceed_factor = file_size/104857600
 
-            parser = createParser(file_path)
-            if not parser:
-                print('Unable to create parser, check if file exist')
-                exit(1)
+                parser = createParser(file_path)
+                if not parser:
+                    print('Unable to create parser, check if file exist')
+                    exit(1)
 
-            metadata = extractMetadata(parser)
-            if not metadata:
-                print('Unable to extract metadata')
-                exit(1)
+                metadata = extractMetadata(parser)
+                if not metadata:
+                    print('Unable to extract metadata')
+                    exit(1)
 
-            if exceed_factor >= 1:
-                exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
-                                                         # resolution denominator
-                logging.debug('File is too big')
-                file_path = too_big(file_path, file_name, file_ext, metadata, exceed_factor)
+                if exceed_factor >= 1:
+                    exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
+                                                             # resolution denominator
+                    logging.debug('File is too big')
+                    file_path = too_big(file_path, file_name, file_ext, metadata, exceed_factor)
 
-            file_length = metadata.get('duration')
-            logging.debug('File length: {0}'.format(file_length))
-            logging.debug('Already uploaded time: {0}'.format(daily_upload_time))
+                file_length = metadata.get('duration')
+                logging.debug('File length: {0}'.format(file_length))
+                logging.debug('Already uploaded time: {0}'.format(daily_upload_time))
 
-            daily_upload_time += file_length
-            logging.debug('Total time after upload: {0}'.format(daily_upload_time))
+                daily_upload_time += file_length
+                logging.debug('Total time after upload: {0}'.format(daily_upload_time))
 
-            if daily_upload_time >= timedelta(minutes=5):
-                logging.debug('Cannot upload more today, will wait 24 hours')
-                sleep(86400)    # sleep for 24 hours
-                daily_upload_time = timedelta(milliseconds=0)
+                if daily_upload_time >= timedelta(minutes=5):
+                    logging.debug('Cannot upload more today, will wait 24 hours')
+                    sleep(86400)    # sleep for 24 hours
+                    daily_upload_time = timedelta(milliseconds=0)
 
-            # read caption from file
-            caption_text, caption_file_path = read_caption(file_name)
+                # read caption from file
+                caption_text, caption_file_path = read_caption(file_name)
 
-            upload(file_path, args.username, caption_text, args.consumer_key, args.consumer_secret, args.oauth_token,
-                   args.oauth_secret)
+                upload(file_path, args.username, caption_text, args.consumer_key, args.consumer_secret, args.oauth_token,
+                       args.oauth_secret)
 
-            # after upload remove file with caption
-            try:
-                remove(caption_file_path)
-            except Exception:
-                logging.debug('File not removed\n{0}'.format(Exception))
+                # after upload remove file with caption
+                try:
+                    remove(caption_file_path)
+                except Exception:
+                    logging.debug('File not removed\n{0}'.format(Exception))
 
-            move_video_to_sent_folder(file_path)
+                move_video_to_sent_folder(file_path)
 
-        # Wait one hour before rerun the directory scanning
-        sleep(3600)
+        # Wait 10 mins before rerun the directory scanning
+        sleep(600)
 
 
 if __name__ == '__main__':
