@@ -131,8 +131,7 @@ def main():
     while True:
         # list all files in folder
         dirpath = args.path
-        filenames = [f for f in listdir(dirpath) if path.isfile(path.join(dirpath, f))].sort()
-        for filename in filenames:
+        for filename in sorted([f for f in listdir(dirpath) if path.isfile(path.join(dirpath, f))]):
             file_path = path.join(dirpath, filename)
             file_name_path, file_ext = path.splitext(file_path)
             if file_ext != '.mp4':
