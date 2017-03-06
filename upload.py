@@ -36,10 +36,10 @@ def read_caption(file_name_path):
         try:
             with open(caption_file_path) as caption_file:
                 caption_text = caption_file.read()
-                logging.debug('Caption file contains:\n{0}'.format(caption_text))
+                logging.info('Caption file contains:\n{0}'.format(caption_text))
                 return caption_text, caption_file_path
         except OSError:
-            logging.debug('Cannot open file with caption: {0}. Will try again for one minute.\n{1}'.format(
+            logging.info('Cannot open file with caption: {0}. Will try again for one minute.\n{1}'.format(
                 caption_file_path, OSError)
             )
             sleep(60)
@@ -52,15 +52,15 @@ def move_video_to_sent_folder(file_path):
         try:
             makedirs(sent_dir)
         except OSError:
-            logging.debug('Exception occured during directory creation:\n{0}'.format(OSError))
+            logging.info('Exception occured during directory creation:\n{0}'.format(OSError))
             exit(1)
 
-    logging.debug('File will be moved to {0}'.format(sent_dir))
+    logging.info('File will be moved to {0}'.format(sent_dir))
 
     try:
         rename(file_path, '{0}/{1}'.format(sent_dir, path.basename(file_path)))
     except OSError:
-        logging.debug('Exception occured during file move:\n{0}'.format(OSError))
+        logging.info('Exception occured during file move:\n{0}'.format(OSError))
         exit(1)
 
 
@@ -73,14 +73,14 @@ def too_big(file_path, file_name_path, file_ext, metadata, exceed_factor):
                                                       height=int(metadata.get('height')/exceed_factor)),
                       new_file_path]
 
-    logging.debug('File will be converted with:\n{0}'.format(convert_params))
+    logging.info('File will be converted with:\n{0}'.format(convert_params))
 
     try:
         out = subprocess.run(convert_params, check=True)
     except subprocess.CalledProcessError as Error:
-        logging.debug('Error during file conversion: {0}'.format(Error))
+        logging.info('Error during file conversion: {0}'.format(Error))
     # if err != 0:
-    #     logging.debug('Error {0}, avconv output:\n{1}'.format(err, out))
+    #     logging.info('Error {0}, avconv output:\n{1}'.format(err, out))
     #     exit(1)
 
     # Moving too big video to sent folder
@@ -96,16 +96,16 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
         oauth_secret
     )
 
-    upload_output = client.create_video(username, caption=caption, data=file_path)
-    logging.debug("Tumblr upload message:\n{0}".format(upload_output))
+    logging.info('Uploading file')
+    logging.info('Tumblr upload message:\n{0}'.format(client.create_video(username, caption=caption, data=file_path)))
 
 
 def main():
     DEADLINE = timedelta(minutes=5)
 
     argument_parser = ArgumentParser()
-    argument_parser.add_argument('-d', '--debug', action='store_true',
-                                 help='Turn on debug mode - will log all events to console')
+    argument_parser.add_argument('-v', '--verbose', action='store_true',
+                                 help='Turn on verbose mode - will log events to console')
     argument_parser.add_argument('-p', '--path', required=True, action='store',
                                  help='Path to directory where the files to upload are')
     argument_parser.add_argument('--username', required=True, action='store',
@@ -121,9 +121,9 @@ def main():
 
     args = argument_parser.parse_args()
 
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-        logging.debug("Debug mode turned on")
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
+        logging.info('Verbose mode turned on')
 
     daily_upload_time = timedelta(milliseconds=0)
 
@@ -136,14 +136,14 @@ def main():
             file_name_path, file_ext = path.splitext(file_path)
             if file_ext != '.mp4':
                 continue
-            logging.debug('File path: {0}'.format(file_path))
+            logging.info('File path: {0}'.format(file_path))
 
 
             # File can't be bigger than 100MB
             # if so, video will be compressed (later)
             # but now check how many times bigger it is
             file_size = path.getsize(file_path)
-            logging.debug('File size: {0}'.format(file_size))
+            logging.info('File size: {0}'.format(file_size))
 
             exceed_factor = file_size/104857600
 
@@ -160,18 +160,18 @@ def main():
             if exceed_factor >= 1:
                 exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
                                                          # resolution denominator
-                logging.debug('File is too big')
+                logging.info('File is too big')
                 file_path = too_big(file_path, file_name_path, file_ext, metadata, exceed_factor)
 
             file_length = metadata.get('duration')
-            logging.debug('File length: {0}'.format(file_length))
-            logging.debug('Already uploaded time: {0}'.format(daily_upload_time))
+            logging.info('File length: {0}'.format(file_length))
+            logging.info('Already uploaded time: {0}'.format(daily_upload_time))
 
             daily_upload_time += file_length
-            logging.debug('Total time after upload: {0}'.format(daily_upload_time))
+            logging.info('Total time after upload: {0}'.format(daily_upload_time))
 
             if daily_upload_time >= DEADLINE:
-                logging.debug('Cannot upload more today, will wait 24 hours')
+                logging.info('Cannot upload more today, will wait 24 hours')
                 sleep(86400)    # sleep for 24 hours
                 daily_upload_time = timedelta(milliseconds=0)
 
@@ -185,14 +185,14 @@ def main():
             try:
                 remove(caption_file_path)
             except OSError:
-                logging.debug('File not removed\n{0}'.format(OSError))
+                logging.info('File not removed\n{0}'.format(OSError))
 
             move_video_to_sent_folder(file_path)
-            logging.debug('Already uploaded time: {0}, time left: {1}'.format(daily_upload_time,
+            logging.info('Already uploaded time: {0}, time left: {1}'.format(daily_upload_time,
                                                                         DEADLINE - daily_upload_time))
 
         # Wait 10 mins before rerun the directory scanning
-        logging.debug('Waiting for new files')
+        logging.info('Waiting for new files')
         sleep(600)
 
 
