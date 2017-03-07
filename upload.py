@@ -89,15 +89,23 @@ def too_big(file_path, file_name_path, file_ext, metadata, exceed_factor):
 
 
 def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_token, oauth_secret):
-    client = pytumblr.TumblrRestClient(
-        consumer_key,
-        consumer_secret,
-        oauth_token,
-        oauth_secret
-    )
 
-    logging.info('Uploading file')
-    logging.info('Tumblr upload message:\n{0}'.format(client.create_video(username, caption=caption, data=file_path)))
+    while True:
+        client = pytumblr.TumblrRestClient(
+            consumer_key,
+            consumer_secret,
+            oauth_token,
+            oauth_secret
+        )
+
+        logging.info('Uploading file')
+        try:
+            logging.info('Tumblr upload message:\n{0}'.format(client.create_video(username, caption=caption,
+                                                                                  data=file_path)))
+        except ConnectionError as Error:
+            logging.info('Connection error: {0}'.format(Error))
+        else:
+            break
 
 
 def main():
