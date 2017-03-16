@@ -101,11 +101,12 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
         logging.info('Uploading file')
         try:
-            logging.info('Tumblr upload message:\n{0}'.format(client.create_video(username, caption=caption,
-                                                                                  data=file_path)))
+            upload_message = client.create_video(username, caption=caption, data=file_path)
+            logging.info('Tumblr upload message:\n{0}'.format(upload_message))
         except ConnectionError as Error:
             logging.info('Connection error: {0}'.format(Error))
         else:
+            sleep(5)
             break
 
 
