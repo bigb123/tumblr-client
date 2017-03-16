@@ -25,6 +25,7 @@ from datetime import timedelta
 import math
 from argparse import ArgumentParser
 import logging
+from requests.exceptions import ConnectionError
 
 from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
