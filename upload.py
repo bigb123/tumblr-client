@@ -12,7 +12,7 @@ File can have max 100MB. If has more the resolution will be reduced.
 Caption will be read from <video_name>.txt
 
 Dependencies:
-- avconv (libav debian package)
+- avconv (libav debian package, works also on macos: brew install libav)
 - hachoir3 (pip3 install hachoir3)
 - py3tumblr (pip3 install Py3Tumblr)
 '''
@@ -67,7 +67,7 @@ def move_video_to_sent_folder(file_path):
 
 def too_big(file_path, file_name_path, file_ext, metadata, exceed_factor):
     new_file_path = file_name_path + '_smaller' + file_ext
-    convert_params = ['avconv',
+    convert_params = ['ffmpeg',
                       '-loglevel', 'quiet',
                       '-i', file_path,
                       '-s', '{width}x{height}'.format(width=int(metadata.get('width')/exceed_factor),
@@ -76,13 +76,13 @@ def too_big(file_path, file_name_path, file_ext, metadata, exceed_factor):
 
     logging.info('File will be converted with:\n{0}'.format(convert_params))
 
-    try:
-        out = subprocess.run(convert_params, check=True)
-    except subprocess.CalledProcessError as Error:
-        logging.info('Error during file conversion: {0}'.format(Error))
-    # if err != 0:
-    #     logging.info('Error {0}, avconv output:\n{1}'.format(err, out))
-    #     exit(1)
+    while True:
+        try:
+            out = subprocess.run(convert_params, check=True)
+        except subprocess.CalledProcessError as Error:
+            logging.info('Error during file conversion: {0}\nTrying once again'.format(Error))
+        else:
+            break
 
     # Moving too big video to sent folder
     move_video_to_sent_folder(file_path)
@@ -90,6 +90,8 @@ def too_big(file_path, file_name_path, file_ext, metadata, exceed_factor):
 
 
 def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_token, oauth_secret):
+
+    try_again_time = 3600
 
     while True:
         client = pytumblr.TumblrRestClient(
@@ -106,12 +108,21 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
         except ConnectionError as Error:
             logging.info('Connection error: {0}'.format(Error))
         else:
+            # if upload_message; {'meta': {'status': 400, 'msg': 'Bad Request'},
+            # 'response': {'errors': ['This video is longer than your daily upload limit allows. Try again tomorrow.']}}
+            # wait one hour and try again
+            if upload_message['meta']:
+                print('Server side error ocured:\n{0}\nWill try again for {1} seconds'.format(
+                    upload_message,
+                    try_again_time
+                ))
             sleep(5)
             break
 
 
 def main():
     DEADLINE = timedelta(minutes=5)
+    try_again_time = 600
 
     argument_parser = ArgumentParser()
     argument_parser.add_argument('-v', '--verbose', action='store_true',
@@ -180,11 +191,6 @@ def main():
             daily_upload_time += file_length
             logging.info('Total time after upload: {0}'.format(daily_upload_time))
 
-            if daily_upload_time >= DEADLINE:
-                logging.info('Cannot upload more today, will wait 24 hours')
-                sleep(86400)    # sleep for 24 hours
-                daily_upload_time = timedelta(milliseconds=0)
-
             # read caption from file
             caption_text, caption_file_path = read_caption(file_name_path)
 
@@ -202,8 +208,8 @@ def main():
                                                                         DEADLINE - daily_upload_time))
 
         # Wait 10 mins before rerun the directory scanning
-        logging.info('Waiting for new files')
-        sleep(600)
+        logging.info('Waiting for new files. Scanning directory every {0} seconds'.format(try_again_time))
+        sleep(try_again_time)
 
 
 if __name__ == '__main__':
