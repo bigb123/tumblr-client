@@ -19,7 +19,7 @@ Dependencies:
 
 import pytumblr
 import subprocess
-from os import rename, remove, path, makedirs, walk, listdir
+from os import rename, remove, path, makedirs, listdir
 from time import sleep
 from datetime import timedelta
 import math
@@ -122,18 +122,21 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
             upload_message_meta = upload_message.get('meta')
 
-            if upload_message.get('meta') != None:
+            if upload_message_meta != None:
 
                 print('upload message meta status: ', upload_message_meta)
 
                 message_status = upload_message_meta.get('status')
 
-                if upload_message_meta.get('status') == 429:
+                # Limit Exceeded error
+                if 429 == message_status:
                     try_again_time = 10
-                elif message_status == 400:
-                    try_again_time = 3600
+                # Max daily upload movie length limit reached
+                elif 400 == message_status:
+                    # wait 24 hours - till the next day
+                    try_again_time = 86400
                 else:
-                    try_again_time = 3600
+                    try_again_time = 360
 
                 logging.info('Server side error ocured. Will try again for {0} seconds'.format(try_again_time))
                 sleep(try_again_time)
@@ -184,7 +187,7 @@ def main():
 
             # File can't be bigger than 100MB
             # if so, video will be compressed (later)
-            # but now check how many times bigger it is
+            # but now check how many times is it too big
             file_size = path.getsize(file_path)
             logging.info('File size: {0}'.format(file_size))
 
@@ -202,7 +205,7 @@ def main():
 
             if exceed_factor >= 1:
                 exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
-                                                         # resolution denominator
+                                                         # video resolution denominator
                 logging.info('File is too big')
                 file_path = too_big(file_path, file_name_path, file_ext, metadata, exceed_factor)
 
