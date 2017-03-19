@@ -117,22 +117,18 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
             #       'meta': {'status': 429, 'msg': 'Limit Exceeded'}}
             # wait and try again
 
-            print('upload message get meta: ', upload_message.get('meta'))
+            upload_message_meta = upload_message.get('meta')
 
             if upload_message.get('meta') != None:
 
-                print('upload message meta status: ', upload_message['meta']['status'])
+                print('upload message meta status: ', upload_message_meta)
 
-                if upload_message['meta']['status'] == '429':
+                if upload_message_meta.get('status') == '429':
                     try_again_time = 10
                 else:
                     try_again_time = 3600
 
-                logging.info('Server side error ocured:\n{0}\nWill try again for {1} seconds'.format(
-                    upload_message,
-                    try_again_time
-                ))
-
+                logging.info('Server side error ocured. Will try again for {0} seconds'.format(try_again_time))
                 sleep(try_again_time)
                 continue
 
