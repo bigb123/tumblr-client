@@ -108,14 +108,21 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
         except ConnectionError as Error:
             logging.info('Connection error: {0}'.format(Error))
         else:
-            # if upload_message; {'meta': {'status': 400, 'msg': 'Bad Request'},
-            # 'response': {'errors': ['This video is longer than your daily upload limit allows. Try again tomorrow.']}}
+            # server error upload_message: {'meta': {'status': 400, 'msg': 'Bad Request'},
+            #   'response': {'errors': [
+            #       'This video is longer than your daily upload limit allows. Try again tomorrow.'
+            #   ]
+            # }}
             # wait one hour and try again
-            if upload_message['meta']:
+
+            # compare server answer
+            if upload_message.get('id') == None:
                 print('Server side error ocured:\n{0}\nWill try again for {1} seconds'.format(
                     upload_message,
                     try_again_time
                 ))
+                sleep(try_again_time)
+                continue
             sleep(5)
             break
 
