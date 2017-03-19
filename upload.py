@@ -80,7 +80,10 @@ def too_big(file_path, file_name_path, file_ext, metadata, exceed_factor):
         try:
             out = subprocess.run(convert_params, check=True)
         except subprocess.CalledProcessError as Error:
-            logging.info('Error during file conversion: {0}\nTrying once again'.format(Error))
+            logging.info('Error during file conversion: {0}\nCommand output: {1}\nTrying once again'.format(
+                Error,
+                out
+            ))
         else:
             break
 
@@ -123,8 +126,12 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
                 print('upload message meta status: ', upload_message_meta)
 
-                if upload_message_meta.get('status') == '429':
+                message_status = upload_message_meta.get('status')
+
+                if upload_message_meta.get('status') == 429:
                     try_again_time = 10
+                elif message_status == 400:
+                    try_again_time = 3600
                 else:
                     try_again_time = 3600
 
