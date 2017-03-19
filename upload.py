@@ -112,17 +112,18 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
             #           'This video is longer than your daily upload limit allows. Try again tomorrow.'
             #       ]
             # }}
-            # - upload-message: {'meta': {'status': 429, 'msg': 'Limit Exceeded'},
-            #       'response': {'message':
-            #           'You can only have one video transcoding at a time.', 'code': 11}}
+            # - upload-message: {
+            #       'response': {'message': 'You can only have one video transcoding at a time.', 'code': 11},
+            #       'meta': {'status': 429, 'msg': 'Limit Exceeded'}}
             # wait and try again
 
-            # compare server answer
+            print('upload message get meta: ', upload_message.get('meta'))
+
             if upload_message.get('meta') != None:
 
                 print('upload message meta status: ', upload_message['meta']['status'])
 
-                if upload_message['meta']['status'] == 429:
+                if upload_message['meta']['status'] == '429':
                     try_again_time = 10
                 else:
                     try_again_time = 3600
