@@ -128,13 +128,13 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
                 message_status = upload_message_meta.get('status')
 
-                # Limit Exceeded error
+                # Transcoding limit exceeded error
                 if 429 == message_status:
                     try_again_time = 10
                 # Max daily upload movie length limit reached
                 elif 400 == message_status:
-                    # wait 24 hours - till the next day
-                    try_again_time = 86400
+                    # check every hour
+                    try_again_time = 3600
                 else:
                     try_again_time = 360
 
