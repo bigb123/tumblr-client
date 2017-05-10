@@ -146,7 +146,6 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
 
 def main():
-    DEADLINE = timedelta(minutes=5)
     try_again_time = 600
 
     argument_parser = ArgumentParser()
@@ -154,6 +153,8 @@ def main():
                                  help='Turn on verbose mode - will log events to console')
     argument_parser.add_argument('-p', '--path', required=True, action='store',
                                  help='Path to directory where the files to upload are')
+    argument_parser.add_argument('-d', '--delete', action='store_true',
+                                 help='Delete file rather than store it in sent foler')
     argument_parser.add_argument('--username', required=True, action='store',
                                  help='User name/nick of the account')
     argument_parser.add_argument('--consumer-key', required=True, action='store',
@@ -170,8 +171,6 @@ def main():
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
         logging.info('Verbose mode turned on')
-
-    daily_upload_time = timedelta(milliseconds=0)
 
     # INFINITY LOOP START
     while True:
@@ -211,10 +210,6 @@ def main():
 
             file_length = metadata.get('duration')
             logging.info('File length: {0}'.format(file_length))
-            logging.info('Already uploaded time: {0}'.format(daily_upload_time))
-
-            daily_upload_time += file_length
-            logging.info('Total time after upload: {0}'.format(daily_upload_time))
 
             # read caption from file
             caption_text, caption_file_path = read_caption(file_name_path)
@@ -228,9 +223,10 @@ def main():
             except OSError:
                 logging.info('File not removed\n{0}'.format(OSError))
 
-            move_video_to_sent_folder(file_path)
-            logging.info('Already uploaded time: {0}, time left: {1}'.format(daily_upload_time,
-                                                                        DEADLINE - daily_upload_time))
+            if args.delete:
+                remove(file_path)
+            else:
+                move_video_to_sent_folder(file_path)
 
         # Wait 10 mins before rerun the directory scanning
         logging.info('Waiting for new files. Scanning directory every {0} seconds'.format(try_again_time))
