@@ -13,17 +13,28 @@ For this moment script uploading only mp4 files. It is reading caption from <vid
 
 # Usage:
 ```
-usage: upload.py [-h] [-v] -p PATH --username USERNAME --consumer-key
-                 CONSUMER_KEY --consumer-secret CONSUMER_SECRET --oauth-token
-                 OAUTH_TOKEN --oauth-secret OAUTH_SECRET
+usage: upload.py [-h] [-v] [-l LOG] -p PATH [-d] --username USERNAME
+                 --consumer-key CONSUMER_KEY --consumer-secret CONSUMER_SECRET
+                 --oauth-token OAUTH_TOKEN --oauth-secret OAUTH_SECRET
 
-where:
--p / --path       - path to directory with videos to upload
---username        - tumblr username
---consumer-key    - obtained from tumblr
---consumer-secret - as above
---oauth-token     - as above
---oauth-secret    - as above
+Required arguments:
+  -p PATH, --path PATH  Path to directory where the files to upload are
+  --username USERNAME   User name/nick of the account
+  --consumer-key CONSUMER_KEY
+                        Consumer key
+  --consumer-secret CONSUMER_SECRET
+                        Consumer secret
+  --oauth-token OAUTH_TOKEN
+                        OAuth token
+  --oauth-secret OAUTH_SECRET
+                        OAuth secret
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         Turn on verbosity level
+  -l LOG, --log LOG     Path to log file. Useful with --verbose option
+  -d, --delete          Delete file rather than store it in sent foler
+
 ```
 
 You can obtain your Tumblr api credentials on https://api.tumblr.com. They are unique for each account.

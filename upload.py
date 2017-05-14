@@ -150,7 +150,10 @@ def main():
 
     argument_parser = ArgumentParser()
     argument_parser.add_argument('-v', '--verbose', action='store_true',
-                                 help='Turn on verbose mode - will log events to console')
+                                 help='Turn on verbosity level')
+    argument_parser.add_argument('-l', '--log', action='store',
+                                 help='Path to log file. Useful with --verbose option',
+                                 default='')
     argument_parser.add_argument('-p', '--path', required=True, action='store',
                                  help='Path to directory where the files to upload are')
     argument_parser.add_argument('-d', '--delete', action='store_true',
@@ -168,9 +171,13 @@ def main():
 
     args = argument_parser.parse_args()
 
+    log_level = 100
+
     if args.verbose:
-        logging.basicConfig(level=logging.INFO)
-        logging.info('Verbose mode turned on')
+        log_level = logging.INFO
+
+    logging.basicConfig(filename=args.log, level=log_level)
+    logging.info('Debug mode turned on')
 
     # INFINITY LOOP START
     while True:
