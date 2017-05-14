@@ -176,7 +176,7 @@ def main():
     if args.verbose:
         log_level = logging.INFO
 
-    logging.basicConfig(filename=args.log, level=log_level)
+    logging.basicConfig(filename=args.log, level=log_level, format='%(asctime)s %(message)s')
     logging.info('Debug mode turned on')
 
     # INFINITY LOOP START
