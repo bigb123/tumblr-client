@@ -87,8 +87,6 @@ def too_big(file_path, file_name_path, file_ext, metadata, exceed_factor):
         else:
             break
 
-    # Moving too big video to sent folder
-    move_video_to_sent_folder(file_path)
     return new_file_path
 
 
@@ -146,6 +144,9 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
 
 def main():
+
+    # Some variables used locally.
+    # Good to see them at a glance to easy modify them if needed
     try_again_time = 600
 
     argument_parser = ArgumentParser()
@@ -177,7 +178,7 @@ def main():
         log_level = logging.INFO
 
     logging.basicConfig(filename=args.log, level=log_level, format='%(asctime)s %(message)s')
-    logging.info('Debug mode turned on')
+    logging.info('Verbose mode turned on')
 
     # INFINITY LOOP START
     while True:
@@ -213,7 +214,15 @@ def main():
                 exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
                                                          # video resolution denominator
                 logging.info('File is too big')
-                file_path = too_big(file_path, file_name_path, file_ext, metadata, exceed_factor)
+                file_path_smaller = too_big(file_path, file_name_path, file_ext, metadata, exceed_factor)
+
+                # Deleting too big video or moving to sent folder
+                if args.delete:
+                    remove(file_path)
+                else:
+                    move_video_to_sent_folder(file_path)
+
+                file_path = file_path_smaller
 
             file_length = metadata.get('duration')
             logging.info('File length: {0}'.format(file_length))
@@ -235,7 +244,7 @@ def main():
             else:
                 move_video_to_sent_folder(file_path)
 
-        # Wait 10 mins before rerun the directory scanning
+        # Wait couple of mins before rerun the directory scanning
         logging.info('Waiting for new files. Scanning directory every {0} seconds'.format(try_again_time))
         sleep(try_again_time)
 
