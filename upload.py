@@ -25,6 +25,7 @@ from datetime import timedelta
 import math
 from argparse import ArgumentParser
 import logging
+from logging.handlers import RotatingFileHandler
 from requests.exceptions import ConnectionError
 
 from hachoir.parser import createParser
@@ -175,9 +176,12 @@ def main():
     log_level = 100
 
     if args.verbose:
+
         log_level = logging.INFO
 
-    logging.basicConfig(filename=args.log, level=log_level, format='%(asctime)s %(message)s')
+    log_handler = RotatingFileHandler(args.log, maxBytes=1048576, backupCount=4)
+    logging.basicConfig(level=log_level, format='%(asctime)s %(message)s', handlers=[log_handler])
+
     logging.info('Verbose mode turned on')
 
     # INFINITY LOOP START
@@ -205,7 +209,11 @@ def main():
                 print('Unable to create parser, check if file exist')
                 exit(1)
 
-            metadata = extractMetadata(parser)
+            try:
+                metadata = extractMetadata(parser)
+            except Exception:
+                sleep(try_again_time)
+
             if not metadata:
                 print('Unable to extract metadata')
                 exit(1)
