@@ -209,9 +209,11 @@ def main():
                 print('Unable to create parser, check if file exist')
                 exit(1)
 
+            # If file uploading is in progress the metadata extract can be impossible
             try:
                 metadata = extractMetadata(parser)
-            except Exception:
+            except Exception as err:
+                logging.info('Metadata extraction gone wrong, will try for a while\n{0}'.format(err))
                 sleep(try_again_time)
 
             if not metadata:
