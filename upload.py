@@ -204,21 +204,21 @@ def main():
 
             exceed_factor = file_size/104857600
 
-            parser = createParser(file_path)
-            if not parser:
-                print('Unable to create parser, check if file exist')
-                exit(1)
-
-            # If file uploading is in progress the metadata extract can be impossible
-            try:
-                metadata = extractMetadata(parser)
-            except Exception as err:
-                logging.info('Metadata extraction gone wrong, will try for a while\n{0}'.format(err))
+            while True:
+                parser = createParser(file_path)
+                if parser:
+                    break
+                logging.info('Unable to create parser, check if file exist')
                 sleep(try_again_time)
 
-            if not metadata:
-                print('Unable to extract metadata')
-                exit(1)
+            # If file uploading is in progress the metadata extract can be impossible. Wait couple of minutes and try
+            # again
+            while True:
+                metadata = extractMetadata(parser)
+                if metadata:
+                    break
+                logging.info('Unable to extract metadata. Will try again for a couple of minutes')
+                sleep(1)
 
             if exceed_factor >= 1:
                 exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
