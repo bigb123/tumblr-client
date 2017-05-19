@@ -123,7 +123,7 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
             if upload_message_meta != None:
 
-                print('upload message meta status: ', upload_message_meta)
+                logging.info('upload message meta status: {0}'.format(upload_message_meta))
 
                 message_status = upload_message_meta.get('status')
 
@@ -208,7 +208,7 @@ def main():
                 parser = createParser(file_path)
                 if parser:
                     break
-                logging.info('Unable to create parser, check if file exist')
+                logging.info('Unable to create parser, Will try again for a couple of minutes')
                 sleep(try_again_time)
 
             # If file uploading is in progress the metadata extract can be impossible. Wait couple of minutes and try
@@ -218,7 +218,7 @@ def main():
                 if metadata:
                     break
                 logging.info('Unable to extract metadata. Will try again for a couple of minutes')
-                sleep(1)
+                sleep(try_again_time)
 
             if exceed_factor >= 1:
                 exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
