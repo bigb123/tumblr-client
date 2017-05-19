@@ -214,8 +214,8 @@ def main():
                     if metadata:
                         break
                     logging.info('Unable to extract metadata. Will try again for a couple of minutes')
-
-                logging.info('Unable to create parser, Will try again for a couple of minutes')
+                else:
+                    logging.info('Unable to create parser, Will try again for a couple of minutes')
                 sleep(try_again_time)
 
             if exceed_factor >= 1:
