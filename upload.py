@@ -216,7 +216,7 @@ def main():
                     logging.info('Unable to extract metadata. Will try again for a couple of minutes')
 
                 logging.info('Unable to create parser, Will try again for a couple of minutes')
-                sleep(1)
+                sleep(try_again_time)
 
             if exceed_factor >= 1:
                 exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
