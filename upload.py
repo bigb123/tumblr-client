@@ -204,21 +204,19 @@ def main():
 
             exceed_factor = file_size/104857600
 
-            while True:
-                parser = createParser(file_path)
-                if parser:
-                    break
-                logging.info('Unable to create parser, Will try again for a couple of minutes')
-                sleep(try_again_time)
-
             # If file uploading is in progress the metadata extract can be impossible. Wait couple of minutes and try
             # again
             while True:
-                metadata = extractMetadata(parser)
-                if metadata:
-                    break
-                logging.info('Unable to extract metadata. Will try again for a couple of minutes')
-                sleep(try_again_time)
+                parser = createParser(file_path)
+
+                if parser:
+                    metadata = extractMetadata(parser)
+                    if metadata:
+                        break
+                    logging.info('Unable to extract metadata. Will try again for a couple of minutes')
+
+                logging.info('Unable to create parser, Will try again for a couple of minutes')
+                sleep(1)
 
             if exceed_factor >= 1:
                 exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
