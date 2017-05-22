@@ -105,6 +105,10 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
         try:
             upload_message = client.create_video(username, caption=caption, data=file_path)
             logging.info('Tumblr upload message:\n{0}'.format(upload_message))
+
+            # Verify if page with new video has been created
+
+
         except ConnectionError as Error:
             logging.info('Connection error: {0}'.format(Error))
         else:
