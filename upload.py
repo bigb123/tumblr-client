@@ -145,6 +145,7 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
                 continue
 
             # Verify if new post has been created
+            logging.info('Checking if post exist')
             sleep(600)
             posts = client.posts('cotepileptico')
             last_post_summary = posts['posts'][0]['summary']
