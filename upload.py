@@ -28,6 +28,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 from requests.exceptions import ConnectionError
 
+import httplib2
+
 from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
 
@@ -106,9 +108,6 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
             upload_message = client.create_video(username, caption=caption, data=file_path)
             logging.info('Tumblr upload message:\n{0}'.format(upload_message))
 
-            # Verify if page with new video has been created
-
-
         except ConnectionError as Error:
             logging.info('Connection error: {0}'.format(Error))
         else:
@@ -143,6 +142,13 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
                 logging.info('Server side error ocured. Will try again for {0} seconds'.format(try_again_time))
                 sleep(try_again_time)
+                continue
+
+            # Verify if new post has been created
+            sleep(10)
+            posts = client.posts('cotepileptico')
+            last_post_summary = posts['posts'][0]['summary']
+            if last_post_summary != caption.rstrip():
                 continue
 
             break
@@ -180,7 +186,6 @@ def main():
     log_level = 100
 
     if args.verbose:
-
         log_level = logging.INFO
 
     log_handler = RotatingFileHandler(args.log, maxBytes=1048576, backupCount=4)
