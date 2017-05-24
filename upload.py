@@ -34,6 +34,15 @@ from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
 
 
+# GLOBAL CONSTANTS SECTION
+
+# amount of minutes used as waiting timefor answer
+SHORT_TIME  = 60 * 10
+MED_TIME    = 60 * 30
+LONG_TIME   = 60 * 60
+
+
+
 def read_caption(file_name_path):
     caption_file_path = '{fn}.txt'.format(fn=file_name_path)
     while True:
@@ -68,6 +77,16 @@ def move_video_to_sent_folder(file_path):
         exit(1)
 
 
+def remove_file_exc_handler(file_path):
+    while True:
+        try:
+            remove(file_path)
+        except OSError:
+            logging.info('Cannot remove file {0}: {1}'.format(file_path, OSError))
+        else:
+            break
+
+
 def too_big(file_path, file_name_path, file_ext, metadata, exceed_factor):
     new_file_path = file_name_path + '_smaller' + file_ext
     convert_params = ['ffmpeg',
@@ -93,6 +112,17 @@ def too_big(file_path, file_name_path, file_ext, metadata, exceed_factor):
     return new_file_path
 
 
+def post_exist(client, caption):
+
+    logging.info('Checking if post exist')
+    posts = client.posts('cotepileptico')
+    last_post_summary = posts['posts'][0]['summary']
+    if last_post_summary == caption.rstrip():
+        return True
+
+    return False
+
+
 def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_token, oauth_secret):
 
     client = pytumblr.TumblrRestClient(
@@ -110,6 +140,10 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
         except ConnectionError as Error:
             logging.info('Connection error: {0}'.format(Error))
+            sleep(SHORT_TIME)
+            # sometimes server return error but the upload pass
+            if post_exist(client, caption):
+                break
         else:
             # server errors:
             # - upload_message: {'meta': {'status': 400, 'msg': 'Bad Request'},
@@ -132,34 +166,32 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
                 # Transcoding limit exceeded error
                 if 429 == message_status:
-                    try_again_time = 10
+                    try_again_time = SHORT_TIME
                 # Max daily upload movie length limit reached
                 elif 400 == message_status:
                     # check every hour
-                    try_again_time = 3600
+                    try_again_time = LONG_TIME
                 else:
-                    try_again_time = 360
+                    try_again_time = MED_TIME
 
                 logging.info('Server side error ocured. Will try again for {0} seconds'.format(try_again_time))
                 sleep(try_again_time)
                 continue
 
             # Verify if new post has been created
-            logging.info('Checking if post exist')
-            sleep(600)
-            posts = client.posts('cotepileptico')
-            last_post_summary = posts['posts'][0]['summary']
-            if last_post_summary != caption.rstrip():
-                continue
-
-            break
+            # logging.info('Checking if post exist')
+            sleep(MED_TIME)
+            # posts = client.posts('cotepileptico')
+            # last_post_summary = posts['posts'][0]['summary']
+            # if last_post_summary == caption.rstrip():
+            if post_exist(client, caption):
+                break
 
 
 def main():
 
     # Some variables used locally.
     # Good to see them at a glance to easy modify them if needed
-    try_again_time = 600
 
     argument_parser = ArgumentParser()
     argument_parser.add_argument('-v', '--verbose', action='store_true',
@@ -226,7 +258,7 @@ def main():
                     logging.info('Unable to extract metadata. Will try again for a couple of minutes')
                 else:
                     logging.info('Unable to create parser, Will try again for a couple of minutes')
-                sleep(try_again_time)
+                sleep(SHORT_TIME)
 
             if exceed_factor >= 1:
                 exceed_factor = math.ceil(exceed_factor) # need to round it up because it will be the
@@ -236,7 +268,7 @@ def main():
 
                 # Deleting too big video or moving to sent folder
                 if args.delete:
-                    remove(file_path)
+                    remove_file_exc_handler(file_path)
                 else:
                     move_video_to_sent_folder(file_path)
 
@@ -252,19 +284,16 @@ def main():
                    args.oauth_secret)
 
             # after upload remove file with caption
-            try:
-                remove(caption_file_path)
-            except OSError:
-                logging.info('File not removed\n{0}'.format(OSError))
+            remove_file_exc_handler(caption_file_path)
 
             if args.delete:
-                remove(file_path)
+                remove_file_exc_handler(file_path)
             else:
                 move_video_to_sent_folder(file_path)
 
         # Wait couple of mins before rerun the directory scanning
-        logging.info('Waiting for new files. Scanning directory every {0} seconds'.format(try_again_time))
-        sleep(try_again_time)
+        logging.info('Waiting for new files. Scanning directory every {0} seconds'.format(SHORT_TIME))
+        sleep(SHORT_TIME)
 
 
 if __name__ == '__main__':
