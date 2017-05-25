@@ -27,8 +27,7 @@ from argparse import ArgumentParser
 import logging
 from logging.handlers import RotatingFileHandler
 from requests.exceptions import ConnectionError
-
-import httplib2
+import re
 
 from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
@@ -116,8 +115,12 @@ def post_exist(client, caption):
 
     logging.info('Checking if post exist')
     posts = client.posts('cotepileptico')
-    last_post_summary = posts['posts'][0]['summary']
-    if last_post_summary == caption.rstrip():
+    last_post_caption_html = posts['posts'][0]['caption']
+
+    # Caption from blog post is returned in html style. Need to remove html tags
+    html_tags_remover = re.compile('<.*?>')
+    last_post_caption = re.sub(html_tags_remover, '', last_post_caption_html)
+    if last_post_caption == caption.rstrip():
         return True
 
     return False
@@ -140,7 +143,7 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
 
         except ConnectionError as Error:
             logging.info('Connection error: {0}'.format(Error))
-            sleep(SHORT_TIME)
+            sleep(MED_TIME)
             # sometimes server return error but the upload pass
             if post_exist(client, caption):
                 break
@@ -179,19 +182,12 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
                 continue
 
             # Verify if new post has been created
-            # logging.info('Checking if post exist')
             sleep(MED_TIME)
-            # posts = client.posts('cotepileptico')
-            # last_post_summary = posts['posts'][0]['summary']
-            # if last_post_summary == caption.rstrip():
             if post_exist(client, caption):
                 break
 
 
 def main():
-
-    # Some variables used locally.
-    # Good to see them at a glance to easy modify them if needed
 
     argument_parser = ArgumentParser()
     argument_parser.add_argument('-v', '--verbose', action='store_true',
