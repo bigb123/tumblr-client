@@ -262,11 +262,8 @@ def main():
                 logging.info('File is too big')
                 file_path_smaller = too_big(file_path, file_name_path, file_ext, metadata, exceed_factor)
 
-                # Deleting too big video or moving to sent folder
-                if args.delete:
-                    remove_file_exc_handler(file_path)
-                else:
-                    move_video_to_sent_folder(file_path)
+                # Deleting too big video
+                remove_file_exc_handler(file_path)
 
                 file_path = file_path_smaller
 
