@@ -187,6 +187,17 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
                 break
 
 
+def owncloud_filesystem_update(occ_user, occ_path, occ_scan_dir):
+    command = ['sudo', '-u', occ_user, occ_path, 'files:scan', '-p', occ_scan_dir]
+
+    try:
+        out = subprocess.run(command)
+    except subprocess.CalledProcessError as Error:
+        logging.info('Error during owncloud fole system scanning.\n'
+                     'Exit code: {0}\n'
+                     'Error message: {1}'.format(out, Error))
+
+
 def main():
 
     argument_parser = ArgumentParser()
@@ -209,6 +220,12 @@ def main():
                                  help='OAuth token')
     argument_parser.add_argument('--oauth-secret', required=True, action='store',
                                  help='OAuth secret')
+    argument_parser.add_argument('--occ-user', required=False, action='store',
+                                 help='User that has rights to execute occ script')
+    argument_parser.add_argument('--occ-path', required=False, action='store',
+                                 help='Path to owncloud occ management script')
+    argument_parser.add_argument('--occ-scan-dir', required=False, action='store',
+                                 help='Dir to scan on owncloudside. Example: /user/files/Videos')
 
     args = argument_parser.parse_args()
 
@@ -286,6 +303,8 @@ def main():
                 remove_file_exc_handler(file_path)
             else:
                 move_video_to_sent_folder(file_path)
+
+        owncloud_filesystem_update(args.occ-path)
 
         # Wait couple of mins before rerun the directory scanning
         logging.info('Waiting for new files. Scanning directory every {0} seconds'.format(SHORT_TIME))
