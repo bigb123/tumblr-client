@@ -301,7 +301,7 @@ def main():
             else:
                 move_video_to_sent_folder(file_path)
 
-        owncloud_filesystem_update(args.occ-path)
+        owncloud_filesystem_update(args.occ_user, args.occ_path, args.occ_scan_dir)
 
         # Wait couple of mins before rerun the directory scanning
         logging.info('Waiting for new files. Scanning directory every {0} seconds'.format(SHORT_TIME))
