@@ -191,7 +191,7 @@ def owncloud_filesystem_update(occ_user, occ_path, occ_scan_dir):
     command = ['sudo', '-u', occ_user, occ_path, 'files:scan', '-p', occ_scan_dir]
 
     try:
-        out = subprocess.run(command)
+        out = subprocess.run(command, check=True)
     except subprocess.CalledProcessError as Error:
         logging.info('Error during owncloud fole system scanning.\n'
                      'Exit code: {0}\n'
@@ -229,13 +229,16 @@ def main():
 
     args = argument_parser.parse_args()
 
-    log_level = 100
-
     if args.verbose:
         log_level = logging.INFO
+    else:
+        log_level = 100
 
-    log_handler = RotatingFileHandler(args.log, maxBytes=1048576, backupCount=4)
-    logging.basicConfig(level=log_level, format='%(asctime)s %(message)s', handlers=[log_handler])
+    if args.log:
+        log_handler = RotatingFileHandler(args.log, maxBytes=1048576, backupCount=4)
+        logging.basicConfig(level=log_level, format='%(asctime)s %(message)s', handlers=[log_handler])
+    else:
+        logging.basicConfig(level=log_level, format='%(asctime)s %(message)s')
 
     logging.info('Verbose mode turned on')
 
@@ -301,7 +304,8 @@ def main():
             else:
                 move_video_to_sent_folder(file_path)
 
-        owncloud_filesystem_update(args.occ_user, args.occ_path, args.occ_scan_dir)
+            if args.occ_path and args.occ_scan_dir and args.occ_user:
+                owncloud_filesystem_update(args.occ_user, args.occ_path, args.occ_scan_dir)
 
         # Wait couple of mins before rerun the directory scanning
         logging.info('Waiting for new files. Scanning directory every {0} seconds'.format(SHORT_TIME))
