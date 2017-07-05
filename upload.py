@@ -21,13 +21,13 @@ import pytumblr
 import subprocess
 from os import rename, remove, path, makedirs, listdir
 from time import sleep
-from datetime import timedelta
 import math
 from argparse import ArgumentParser
 import logging
 from logging.handlers import RotatingFileHandler
 from requests.exceptions import ConnectionError
 import re
+import html
 
 from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
@@ -120,7 +120,14 @@ def post_exist(client, caption):
     # Caption from blog post is returned in html style. Need to remove html tags
     html_tags_remover = re.compile('<.*?>')
     last_post_caption = re.sub(html_tags_remover, '', last_post_caption_html)
-    if last_post_caption == caption.rstrip():
+
+    # Tumblr changes triple dots '...' to &hellip; - I will change any triple dots to &hellip;. Other way condition
+    # below will think that the post doesn't exist and script will upload this same video constantly
+
+    html_ellipsis_replacer = re.compile('\.\.\.')
+    caption_aftrer_replace = re.sub(html_ellipsis_replacer, '&hellip;', caption)
+
+    if last_post_caption == caption_aftrer_replace.rstrip():
         return True
 
     return False
@@ -136,6 +143,10 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
     )
 
     while True:
+
+        if post_exist(client, caption):
+            break
+
         logging.info('Uploading file')
         try:
             upload_message = client.create_video(username, caption=caption, data=file_path)
@@ -181,10 +192,8 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
                 sleep(try_again_time)
                 continue
 
-            # Verify if new post has been created
+            # Wait couple of minutes before running the loop again and checking if file exist
             sleep(MED_TIME)
-            if post_exist(client, caption):
-                break
 
 
 def owncloud_filesystem_update(occ_user, occ_path, occ_scan_dir):
