@@ -83,6 +83,7 @@ def remove_file_exc_handler(file_path):
         except OSError:
             logging.info('Cannot remove file {0}: {1}'.format(file_path, OSError))
         else:
+            logging.info('Removed file {0}'.format(file_path))
             break
 
 
