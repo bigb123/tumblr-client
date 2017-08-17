@@ -1,15 +1,15 @@
 # tumblr-client
-Tumblr script to auto upload files. Written in python 3. Created io queue multiple short videos. Designed to run in text mode.
+Tumblr script for auto upload files. Written in python 3. Created to queue multiple short videos. Designed to run in text mode.
 
-Reason of it's creation was the poor internet connection. In case of bigger files (> 50MB) Tumblr web interface was dropping the connection saying "Connection error". It was easier to send files with ssh and to the server located in other part of the world and upload them to Tumblr service directly from in. It was also important that client can run as text mode daemon.
+Reason of it's creation was the poor internet connection. In case of bigger files (> 50MB) Tumblr web interface was dropping the connection saying "Connection error". It was easier to send files via ssh to the server located in other part of the world and upload them to Tumblr service directly from it. It was also important that client can be running as text mode daemon.
 
-Right now script is uploading only mp4 files. It is sendint as much videos as possible a day. After file upload server response is reading and decision what to do next is being taken:
+Right now script is uploading only mp4 files. It is uploading as much videos as possible a day. After file upload server response is reading and decision what to do next is being taken:
 * if success: upload next video
 * if video processing error try uploading again
 * if the video uploaded time reached the limit wait longer and try again
-* if any other error try again for a while
+* if any other error try again in some time
 
-For this moment script uploading only mp4 files. It is reading caption from <video_name>.txt file. If there is no such a txt file it is waiting a while and trying to find file once again (infinity loop). It is moving sent files to "sent" directory in given path. If all files are sent it is scanning given directory every period of time. 
+For this moment script uploading only mp4 files. It is reading caption from <video_name>.txt file. If there is no such a txt file it is waiting a while and trying to find file once again (infinity loop). It is moving uploaded file to "sent" directory in given path. If all files are sent it is scanning given directory from time to time. 
 
 # Usage:
 ```
@@ -31,7 +31,7 @@ Required arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -v, --verbose         Turn on verbosity level
+  -v, --verbose         Turn on verbose mode
   -l LOG, --log LOG     Path to log file. Useful with --verbose option
   -d, --delete          Delete file rather than store it in sent foler
 
