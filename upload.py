@@ -51,7 +51,7 @@ def read_caption(file_name_path):
                 logging.info('Caption file contains:\n{0}'.format(caption_text))
                 return caption_text, caption_file_path
         except OSError:
-            logging.info('Cannot open file with caption: {0}. Will try again for one minute.\n{1}'.format(
+            logging.info('Cannot open file with caption: {0}. Will try again in one minute.\n{1}'.format(
                 caption_file_path, OSError)
             )
             sleep(60)
@@ -189,7 +189,7 @@ def upload(file_path, username, caption, consumer_key, consumer_secret, oauth_to
                 else:
                     try_again_time = MED_TIME
 
-                logging.info('Server side error ocured. Will try again for {0} seconds'.format(try_again_time))
+                logging.info('Server side error ocured. Will try again in {0} seconds'.format(try_again_time))
                 sleep(try_again_time)
                 continue
 
@@ -281,9 +281,9 @@ def main():
                     metadata = extractMetadata(parser)
                     if metadata:
                         break
-                    logging.info('Unable to extract metadata. Will try again for a couple of minutes')
+                    logging.info('Unable to extract metadata. Will try again in a couple of minutes')
                 else:
-                    logging.info('Unable to create parser, Will try again for a couple of minutes')
+                    logging.info('Unable to create parser, Will try again in a couple of minutes')
                 sleep(SHORT_TIME)
 
             if exceed_factor >= 1:
